@@ -1,14 +1,10 @@
 package com.example.library.services;
 
-import com.example.library.LibraryManagementSystemApplication;
-import com.example.library.database.Database;
+import com.example.library.exceptions.DuplicateResourceException;
 import com.example.library.models.*;
-import com.example.library.models.dto.BookDTO;
-import com.example.library.models.dto.MagazineDTO;
-import com.example.library.models.dto.ReferenceDTO;
-import com.example.library.models.dto.ThesisDTO;
-import com.example.library.models.enums.LibraryItemStatus;
-import com.example.library.models.enums.LibraryItemType;
+import com.example.library.models.dto.*;
+import com.example.library.models.enums.*;
+import com.example.library.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +14,20 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class CreateLibraryItemService {
+
+    private final BookRepository bookRepository;
+    private final MagazineRepository magazineRepository;
+    private final ReferenceRepository referenceRepository;
+    private final ThesisRepository thesisRepository;
+
     @Transactional
-    public Book createBook(BookDTO bookDTO){
-        Book book = Book.builder().title(bookDTO.getTitle())
+    public Book createBook(BookDTO bookDTO) {
+        if (bookRepository.existsByIsbn(bookDTO.getIsbn())) {
+            throw new DuplicateResourceException("Book with ISBN " + bookDTO.getIsbn() + " already exists");
+        }
+
+        Book book = Book.builder()
+                .title(bookDTO.getTitle())
                 .isbn(bookDTO.getIsbn())
                 .genre(bookDTO.getGenre())
                 .author(bookDTO.getAuthor())
@@ -29,13 +36,15 @@ public class CreateLibraryItemService {
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.BOOK)
                 .build();
-        Database.getLibraryItems().add(book);
-        return book;
+
+        log.info("Creating book: {}", book.getTitle());
+        return bookRepository.save(book);
     }
 
     @Transactional
-    public Thesis createThesis(ThesisDTO thesisDTO){
-        Thesis thesis = Thesis.builder().advisor(thesisDTO.getAdvisor())
+    public Thesis createThesis(ThesisDTO thesisDTO) {
+        Thesis thesis = Thesis.builder()
+                .advisor(thesisDTO.getAdvisor())
                 .author(thesisDTO.getAuthor())
                 .publishDate(thesisDTO.getPublishDate())
                 .department(thesisDTO.getDepartment())
@@ -44,13 +53,20 @@ public class CreateLibraryItemService {
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.THESIS)
                 .build();
-        Database.getLibraryItems().add(thesis);
-        return thesis;
+
+        log.info("Creating thesis: {}", thesis.getTitle());
+        return thesisRepository.save(thesis);
     }
 
     @Transactional
-    public Magazine createMagazine(MagazineDTO magazineDTO){
-        Magazine magazine = Magazine.builder().issueNumber(magazineDTO.getIssueNumber())
+    public Magazine createMagazine(MagazineDTO magazineDTO) {
+        magazineRepository.findByIssueNumber(magazineDTO.getIssueNumber())
+                .ifPresent(m -> {
+                    throw new DuplicateResourceException("Magazine with issue number " + magazineDTO.getIssueNumber() + " already exists");
+                });
+
+        Magazine magazine = Magazine.builder()
+                .issueNumber(magazineDTO.getIssueNumber())
                 .publishDate(magazineDTO.getPublishDate())
                 .title(magazineDTO.getTitle())
                 .author(magazineDTO.getAuthor())
@@ -59,13 +75,15 @@ public class CreateLibraryItemService {
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.MAGAZINE)
                 .build();
-        Database.getLibraryItems().add(magazine);
-        return magazine;
+
+        log.info("Creating magazine: {}", magazine.getTitle());
+        return magazineRepository.save(magazine);
     }
 
     @Transactional
-    public Reference createReference(ReferenceDTO referenceDTO){
-        Reference reference = Reference.builder().edition(referenceDTO.getEdition())
+    public Reference createReference(ReferenceDTO referenceDTO) {
+        Reference reference = Reference.builder()
+                .edition(referenceDTO.getEdition())
                 .referenceType(referenceDTO.getReferenceType())
                 .author(referenceDTO.getAuthor())
                 .publishDate(referenceDTO.getPublishDate())
@@ -74,7 +92,8 @@ public class CreateLibraryItemService {
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.REFERENCE)
                 .build();
-        Database.getLibraryItems().add(reference);
-        return reference;
+
+        log.info("Creating reference: {}", reference.getTitle());
+        return referenceRepository.save(reference);
     }
 }

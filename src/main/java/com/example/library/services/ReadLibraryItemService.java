@@ -1,50 +1,41 @@
 package com.example.library.services;
 
-import com.example.library.LibraryManagementSystemApplication;
-import com.example.library.database.Database;
+import com.example.library.exceptions.ResourceNotFoundException;
 import com.example.library.models.LibraryItem;
 import com.example.library.models.enums.SearchAlgorithm;
+import com.example.library.repositories.LibraryItemRepository;
 import com.example.library.services.search.strategies.SearchStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Vector;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-
 public class ReadLibraryItemService {
-    public LibraryItem getLibraryItemById(int id){
-        if(!Database.getLibraryItems().contains(id)){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
-        }
-        return Database.getLibraryItems().get(id);
+
+    private final LibraryItemRepository libraryItemRepository;
+
+    public LibraryItem getLibraryItemById(int id) {
+        return libraryItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Item with id " + id + " not found"));
     }
 
-    public ArrayList<LibraryItem> getAllLibraryItems(){
-        return Database.getLibraryItems();
+    public List<LibraryItem> getAllLibraryItems() {
+        return libraryItemRepository.findAll();
     }
 
-    public ArrayList<LibraryItem> searchLibraryItems(SearchAlgorithm searchAlgorithm, String keyword){
-        var allItems = Database.getLibraryItems();
+    public List<LibraryItem> searchLibraryItems(SearchAlgorithm searchAlgorithm, String keyword) {
+        var allItems = libraryItemRepository.findAll();
         var strategy = SearchStrategyFactory.createStrategy(searchAlgorithm);
-        return allItems.parallelStream()
+        return allItems.stream()
                 .filter(item -> strategy.matches(item, keyword))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.toList());
     }
 
-    public ArrayList<LibraryItem> sortLibraryItemsByPublishDate(){
-        Database.getLibraryItems().sort(Comparator.comparing(LibraryItem::getPublishDate).reversed());
-        return Database.getLibraryItems();
+    public List<LibraryItem> sortLibraryItemsByPublishDate() {
+        return libraryItemRepository.findAllByOrderByPublishDateDesc();
     }
-
 }

@@ -20,7 +20,7 @@
         <java.version>21</java.version>
         <protobuf.version>3.25.1</protobuf.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
-        <springdoc.version>2.3.0</springdoc.version>
+        <springdoc.version>2.7.0</springdoc.version>
     </properties>
 
     <dependencies>

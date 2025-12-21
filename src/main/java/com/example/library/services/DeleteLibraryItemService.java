@@ -1,26 +1,25 @@
 package com.example.library.services;
 
-import com.example.library.LibraryManagementSystemApplication;
-import com.example.library.database.Database;
-import com.example.library.models.LibraryItem;
-import com.example.library.models.LibraryResult;
+import com.example.library.exceptions.ResourceNotFoundException;
+import com.example.library.repositories.LibraryItemRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DeleteLibraryItemService {
+
+    private final LibraryItemRepository libraryItemRepository;
+
     @Transactional
-    public void deleteLibraryItem(int id){
-        if(!Database.getLibraryItems().contains(id)){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "asd");
+    public void deleteLibraryItem(int id) {
+        if (!libraryItemRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Item not found with id: " + id);
         }
-        Database.getLibraryItems().remove(id);
+        libraryItemRepository.deleteById(id);
+        log.info("Deleted library item with ID: {}", id);
     }
 }

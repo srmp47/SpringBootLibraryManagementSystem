@@ -1,6 +1,7 @@
 package com.example.library.controllers;
 
 
+import com.example.library.exceptions.BusinessRuleException;
 import com.example.library.models.LibraryItem;
 import com.example.library.models.enums.LibraryItemStatus;
 import com.example.library.services.UpdateLibraryItemService;
@@ -20,9 +21,10 @@ public class UpdateLibraryItemController {
 
     @Operation(summary = "Change library item status")
     @PatchMapping("/{id}/status/{newStatus}")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<LibraryItem> patchLibraryItemStatus(@PathVariable int id, @PathVariable LibraryItemStatus newStatus) {
-            LibraryItem libraryItem = updateLibraryItemService.patchLibraryItemStatus(id, newStatus);
-            return ResponseEntity.ok(libraryItem);
+    public ResponseEntity<LibraryItem> patchLibraryItemStatus(
+            @PathVariable int id,
+            @PathVariable LibraryItemStatus newStatus) {
+        LibraryItem libraryItem = updateLibraryItemService.patchLibraryItemStatus(id, newStatus);
+        return ResponseEntity.ok(libraryItem);
     }
 }

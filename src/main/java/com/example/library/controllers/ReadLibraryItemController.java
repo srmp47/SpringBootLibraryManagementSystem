@@ -5,43 +5,48 @@ import com.example.library.models.enums.SearchAlgorithm;
 import com.example.library.services.ReadLibraryItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.ServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/get")
+@RequestMapping("/api/items")
 @RequiredArgsConstructor
 @Tag(name = "Read Items", description = "Endpoints for READ operation on library items")
 public class ReadLibraryItemController {
+
     private final ReadLibraryItemService readLibraryItemService;
 
-    @Operation(summary = "Get one item")
+    @Operation(summary = "Get a specific item by ID")
     @GetMapping("/{id}")
-    public LibraryItem getLibraryItemById(@PathVariable int id){
-        return readLibraryItemService.getLibraryItemById(id);
+    public ResponseEntity<LibraryItem> getLibraryItemById(@PathVariable int id) {
+        LibraryItem item = readLibraryItemService.getLibraryItemById(id);
+        return ResponseEntity.ok(item);
     }
 
     @Operation(summary = "Get all library items")
-    @GetMapping("")
-    public ArrayList<LibraryItem> getAllLibraryItems(){
-        return readLibraryItemService.getAllLibraryItems();
+    @GetMapping
+    public ResponseEntity<List<LibraryItem>> getAllLibraryItems() {
+        List<LibraryItem> items = readLibraryItemService.getAllLibraryItems();
+        return ResponseEntity.ok(items);
     }
 
-    @Operation(summary = "Search in items")
-    @GetMapping("/search/{algorithm}/{keyword}")
-    public ArrayList<LibraryItem> searchLibraryItems(@Valid @PathVariable SearchAlgorithm algorithm,
-                                                     @PathVariable String keyword, ServletRequest servletRequest){
-        return readLibraryItemService.searchLibraryItems(algorithm, keyword);
+    @Operation(summary = "Search library items")
+    @GetMapping("/search")
+    public ResponseEntity<List<LibraryItem>> searchLibraryItems(
+            @RequestParam SearchAlgorithm algorithm,
+            @RequestParam String keyword) {
+
+        List<LibraryItem> results = readLibraryItemService.searchLibraryItems(algorithm, keyword);
+        return ResponseEntity.ok(results);
     }
 
-    @Operation(summary = "Sort items by publication date")
-    @GetMapping("/sort")
-    public ArrayList<LibraryItem> sortLibraryItemsByPublishDate(){
-        return readLibraryItemService.sortLibraryItemsByPublishDate();
+    @Operation(summary = "Get items sorted by publication date")
+    @GetMapping("/sorted")
+    public ResponseEntity<List<LibraryItem>> sortLibraryItemsByPublishDate() {
+        List<LibraryItem> sortedItems = readLibraryItemService.sortLibraryItemsByPublishDate();
+        return ResponseEntity.ok(sortedItems);
     }
-
 }

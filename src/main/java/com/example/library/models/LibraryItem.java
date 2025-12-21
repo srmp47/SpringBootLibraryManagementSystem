@@ -35,4 +35,7 @@ public abstract class LibraryItem {
     protected LibraryItemType type;
 
     protected LocalDate returnDate;
+    @OneToOne()
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    protected User user;
 }
