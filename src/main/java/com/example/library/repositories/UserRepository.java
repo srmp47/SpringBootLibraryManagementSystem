@@ -15,4 +15,5 @@ import java.util.function.Function;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
+    boolean existsByUsername(String username);
 }

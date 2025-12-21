@@ -27,4 +27,18 @@ public class UpdateLibraryItemController {
         LibraryItem libraryItem = updateLibraryItemService.patchLibraryItemStatus(id, newStatus);
         return ResponseEntity.ok(libraryItem);
     }
+
+    @Operation(summary = "Borrow Item")
+    @PatchMapping("{itemId}/borrow/{userId}")
+    public ResponseEntity<LibraryItem> borrowLibraryItem(@PathVariable int itemId, @PathVariable int userId){
+        LibraryItem libraryItem = updateLibraryItemService.borrowItem(itemId, userId);
+        return ResponseEntity.ok(libraryItem);
+    }
+
+    @Operation(summary = "Return borrowed item")
+    @PatchMapping("return/{itemId}")
+    public ResponseEntity<LibraryItem> returnLibraryItem(@PathVariable int itemId){
+        LibraryItem libraryItem = updateLibraryItemService.returnItem(itemId);
+        return ResponseEntity.ok(libraryItem);
+    }
 }
