@@ -19,6 +19,7 @@ public class CreateLibraryItemService {
     private final MagazineRepository magazineRepository;
     private final ReferenceRepository referenceRepository;
     private final ThesisRepository thesisRepository;
+    private final LibraryItemRepository libraryItemRepository;
 
     @Transactional
     public Book createBook(BookDTO bookDTO) {
@@ -35,6 +36,7 @@ public class CreateLibraryItemService {
                 .publishDate(bookDTO.getPublishDate())
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.BOOK)
+                .version(0)
                 .build();
 
         log.info("Creating book: {}", book.getTitle());
@@ -43,6 +45,16 @@ public class CreateLibraryItemService {
 
     @Transactional
     public Thesis createThesis(ThesisDTO thesisDTO) {
+        boolean exists = libraryItemRepository.findByTitleContainingIgnoreCase(thesisDTO.getTitle())
+                .stream()
+                .anyMatch(item -> item.getAuthor() != null &&
+                        item.getAuthor().equalsIgnoreCase(thesisDTO.getAuthor()) &&
+                        item.getType() == LibraryItemType.THESIS);
+
+        if (exists) {
+            throw new DuplicateResourceException("Thesis with same title and author already exists");
+        }
+
         Thesis thesis = Thesis.builder()
                 .advisor(thesisDTO.getAdvisor())
                 .author(thesisDTO.getAuthor())
@@ -52,6 +64,7 @@ public class CreateLibraryItemService {
                 .university(thesisDTO.getUniversity())
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.THESIS)
+                .version(0)
                 .build();
 
         log.info("Creating thesis: {}", thesis.getTitle());
@@ -74,6 +87,7 @@ public class CreateLibraryItemService {
                 .publisher(magazineDTO.getPublisher())
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.MAGAZINE)
+                .version(0)
                 .build();
 
         log.info("Creating magazine: {}", magazine.getTitle());
@@ -91,6 +105,7 @@ public class CreateLibraryItemService {
                 .title(referenceDTO.getTitle())
                 .status(LibraryItemStatus.EXIST)
                 .type(LibraryItemType.REFERENCE)
+                .version(0)
                 .build();
 
         log.info("Creating reference: {}", reference.getTitle());

@@ -10,6 +10,7 @@ import com.example.library.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,49 +24,61 @@ public class UpdateLibraryItemService {
     @Transactional
     public LibraryItem patchLibraryItemStatus(int id, LibraryItemStatus newStatus) {
         if (newStatus == LibraryItemStatus.BORROWED) {
-            throw new BusinessRuleException("Changing status to BORROWED is not allowed.");
+            throw new BusinessRuleException("Changing status to BORROWED is not allowed. Use borrow endpoint instead.");
         }
+
         LibraryItem libraryItem = findItemOrThrow(id);
         libraryItem.setStatus(newStatus);
-        return libraryItemRepository.save(libraryItem);
+
+        try {
+            return libraryItemRepository.save(libraryItem);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new BusinessRuleException("This item was modified by another user. Please refresh and try again.");
+        }
     }
 
     @Transactional
-    public LibraryItem updateLibraryItemTitle(int id, String newTitle) {
-        LibraryItem libraryItem = findItemOrThrow(id);
-        libraryItem.setTitle(newTitle);
-        return libraryItemRepository.save(libraryItem);
-    }
-
-    @Transactional
-    public LibraryItem updateLibraryItemAuthor(int id, String newAuthor) {
-        LibraryItem libraryItem = findItemOrThrow(id);
-        libraryItem.setAuthor(newAuthor);
-        return libraryItemRepository.save(libraryItem);
-    }
-
-    @Transactional
-    public LibraryItem borrowItem(int id, Integer userId) {
-        LibraryItem libraryItem = findItemOrThrow(id);
+    public LibraryItem borrowItem(int itemId, Integer userId) {
+        LibraryItem libraryItem = libraryItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found with id: " + itemId));
 
         if (libraryItem.getUser() != null) {
             throw new BusinessRuleException("This item is already borrowed by another user.");
         }
 
+        if (libraryItem.getStatus() != LibraryItemStatus.EXIST) {
+            throw new BusinessRuleException("This item is not available for borrowing.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
+
+        long borrowedCount = libraryItemRepository.findItemsByUserId(userId).size();
+        if (borrowedCount >= 5) {
+            throw new BusinessRuleException("User cannot borrow more than 5 items.");
+        }
+
         libraryItem.setUser(user);
         libraryItem.setStatus(LibraryItemStatus.BORROWED);
+
+        log.info("User {} borrowed item {}", userId, itemId);
         return libraryItemRepository.save(libraryItem);
     }
 
     @Transactional
-    public LibraryItem returnItem(int id) {
-        LibraryItem libraryItem = findItemOrThrow(id);
+    public LibraryItem returnItem(int itemId) {
+        LibraryItem libraryItem = findItemOrThrow(itemId);
+
+        if (libraryItem.getUser() == null) {
+            throw new BusinessRuleException("This item is not borrowed.");
+        }
+
         libraryItem.setUser(null);
-        libraryItem.setReturnDate(null);
         libraryItem.setStatus(LibraryItemStatus.EXIST);
+        libraryItem.setReturnDate(null);
+
+        log.info("Item {} returned", itemId);
         return libraryItemRepository.save(libraryItem);
     }
 

@@ -38,4 +38,7 @@ public abstract class LibraryItem {
     @OneToOne()
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     protected User user;
+    @Version
+    @Column(name = "version")
+    private Integer version;
 }
