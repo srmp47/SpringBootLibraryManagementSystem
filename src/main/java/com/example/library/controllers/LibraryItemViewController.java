@@ -2,6 +2,7 @@ package com.example.library.controllers;
 
 import com.example.library.models.LibraryItemView;
 import com.example.library.repositories.LibraryItemViewRepository;
+import com.example.library.services.MonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,23 +18,30 @@ import java.util.List;
 public class LibraryItemViewController {
 
     private final LibraryItemViewRepository libraryItemViewRepository;
+    private final MonitoringService monitoringService;
 
     @Operation(summary = "Get full library summary", description = "Returns a flat view of all items joined with current borrower information")
     @GetMapping("/all-info")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LibraryItemView>> getAllWithUserInfo() {
+        monitoringService.incrementTotal();
+        monitoringService.incrementSuccess();
         return ResponseEntity.ok(libraryItemViewRepository.findAll());
     }
 
     @Operation(summary = "List currently borrowed items", description = "Shows all items that are currently out with users")
     @GetMapping("/borrowed")
     public ResponseEntity<List<List<LibraryItemView>>> getBorrowed() {
+        monitoringService.incrementTotal();
+        monitoringService.incrementSuccess();
         return ResponseEntity.ok(List.of(libraryItemViewRepository.findBorrowedItems()));
     }
 
     @Operation(summary = "List available items", description = "Returns a list of all items currently on the shelves (Status = EXIST)")
     @GetMapping("/available")
     public ResponseEntity<List<LibraryItemView>> getAvailable() {
+        monitoringService.incrementTotal();
+        monitoringService.incrementSuccess();
         return ResponseEntity.ok(libraryItemViewRepository.findAvailableItems());
     }
 
@@ -41,6 +49,8 @@ public class LibraryItemViewController {
     @GetMapping("/by-user")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LibraryItemView>> getByUser(@RequestParam String username) {
+        monitoringService.incrementTotal();
+        monitoringService.incrementSuccess();
         return ResponseEntity.ok(libraryItemViewRepository.findItemsBorrowedByUser(username));
     }
 }

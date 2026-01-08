@@ -5,6 +5,7 @@ import com.example.library.models.dto.LoginRequest;
 import com.example.library.models.dto.UserDTO;
 import com.example.library.repositories.UserRepository;
 import com.example.library.security.JwtService;
+import com.example.library.services.MonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MonitoringService monitoringService;
 
     @Operation(
             summary = "Register a new user",
@@ -36,8 +38,10 @@ public class AuthenticationController {
     )
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody UserDTO dto) {
+        monitoringService.incrementTotal();
         if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Error: Username is already taken!");
+            monitoringService.incrementFailure();
+            throw new RuntimeException("Username is already taken!");
         }
 
         User user = User.builder()
@@ -45,8 +49,8 @@ public class AuthenticationController {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .role(dto.getRole())
                 .build();
-
         userRepository.save(user);
+        monitoringService.incrementSuccess();
         return ResponseEntity.ok("User registered successfully");
     }
 
@@ -56,24 +60,13 @@ public class AuthenticationController {
     )
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest request) {
-        System.out.println("Login attempt for user: " + request.getUsername());
-        System.out.println("Raw password provided: " + request.getPassword());
-
-        var user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-        System.out.println("Encoded password in DB: " + user.getPassword());
-
-        // چک کردن دستی پسورد بدون دخالت AuthenticationManager
-        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        System.out.println("Does password match? " + matches);
-
-        if (!matches) {
-            throw new BadCredentialsException("Invalid password");
-        }
-
+        monitoringService.incrementTotal();
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
-
-        return ResponseEntity.ok(jwtService.generateToken(user));
+        var user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        String token = jwtService.generateToken(user);
+        monitoringService.incrementSuccess();
+        return ResponseEntity.ok(token);
     }
 }

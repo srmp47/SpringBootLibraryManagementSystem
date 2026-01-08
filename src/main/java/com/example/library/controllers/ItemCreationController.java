@@ -3,6 +3,7 @@ package com.example.library.controllers;
 import com.example.library.models.*;
 import com.example.library.models.dto.*;
 import com.example.library.services.CreateLibraryItemService;
+import com.example.library.services.MonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,32 +22,41 @@ import java.net.URI;
 public class ItemCreationController {
 
     private final CreateLibraryItemService createLibraryItemService;
+    private final MonitoringService monitoringService;
 
     @Operation(summary = "Add a new book", description = "Creates a new book record with ISBN and page count details")
     @PostMapping("/books")
     public ResponseEntity<Book> createBook(@Valid @RequestBody BookDTO dto) {
+        monitoringService.incrementTotal();
         Book saved = createLibraryItemService.createBook(dto);
+        monitoringService.incrementSuccess();
         return ResponseEntity.created(createLocation(saved.getId())).body(saved);
     }
 
     @Operation(summary = "Add a new thesis", description = "Creates a new thesis record including university and advisor information")
     @PostMapping("/theses")
     public ResponseEntity<Thesis> createThesis(@Valid @RequestBody ThesisDTO dto) {
+        monitoringService.incrementTotal();
         Thesis saved = createLibraryItemService.createThesis(dto);
+        monitoringService.incrementSuccess();
         return ResponseEntity.created(createLocation(saved.getId())).body(saved);
     }
 
     @Operation(summary = "Add a new magazine", description = "Creates a new magazine entry with issue number and publisher details")
     @PostMapping("/magazines")
     public ResponseEntity<Magazine> createMagazine(@Valid @RequestBody MagazineDTO dto) {
+        monitoringService.incrementTotal();
         Magazine saved = createLibraryItemService.createMagazine(dto);
+        monitoringService.incrementSuccess();
         return ResponseEntity.created(createLocation(saved.getId())).body(saved);
     }
 
     @Operation(summary = "Add a new reference", description = "Creates a new reference item like encyclopedias or dictionaries")
     @PostMapping("/references")
     public ResponseEntity<Reference> createReference(@Valid @RequestBody ReferenceDTO dto) {
+        monitoringService.incrementTotal();
         Reference saved = createLibraryItemService.createReference(dto);
+        monitoringService.incrementSuccess();
         return ResponseEntity.created(createLocation(saved.getId())).body(saved);
     }
 
