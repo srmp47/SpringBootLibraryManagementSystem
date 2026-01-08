@@ -9,6 +9,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,9 +24,19 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private final MonitoringService monitoringService;
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+            return auth.getName();
+        }
+        return "anonymous";
+    }
+
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pd.setTitle("Resource Not Found");
         pd.setProperty("timestamp", Instant.now());
@@ -33,7 +45,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail handleBusinessRule(BusinessRuleException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         pd.setTitle("Business Rule Violation");
         pd.setProperty("timestamp", Instant.now());
@@ -42,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateResourceException.class)
     public ProblemDetail handleDuplicate(DuplicateResourceException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         pd.setTitle("Resource Already Exists");
         pd.setProperty("timestamp", Instant.now());
@@ -51,7 +63,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ProblemDetail handleOptimisticLockException(ObjectOptimisticLockingFailureException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "This record was modified by another user. Please refresh and try again.");
         pd.setTitle("Concurrent Modification");
@@ -61,7 +73,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneral(Exception ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred :\n" + ex);
         pd.setTitle("Server Error");
@@ -71,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         String detail = "The request contains invalid data.";
 
         if (ex.getMessage() != null && ex.getMessage().contains("UserRole")) {
@@ -86,7 +98,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({BadCredentialsException.class})
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNAUTHORIZED,
                 "Invalid username or password"
@@ -98,7 +110,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({AuthenticationException.class})
     public ProblemDetail handleAuthenticationException(AuthenticationException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNAUTHORIZED,
                 ex.getMessage()
@@ -111,7 +123,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         String errorMessage = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -126,7 +138,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
                 HttpStatus.FORBIDDEN,
                 "You do not have permission to access this resource. Required role: ADMIN"
@@ -138,7 +150,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ProblemDetail handleAuthorizationDenied(AuthorizationDeniedException ex) {
-        monitoringService.incrementFailure();
+        monitoringService.incrementFailure(getCurrentUsername());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
                 HttpStatus.FORBIDDEN,
                 "Access Denied: You do not have the required role to perform this action."

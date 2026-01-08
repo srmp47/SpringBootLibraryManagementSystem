@@ -26,7 +26,6 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
-    // لیست آدرس‌هایی که نیاز به احراز هویت ندارند
     private static final String[] WHITE_LIST_URL = {
             "/api/auth/**",
             "/v2/api-docs",
@@ -38,13 +37,14 @@ public class SecurityConfig {
             "/configuration/security",
             "/swagger-ui/**",
             "/webjars/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            "/actuator/prometheus"
     };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // روش جدید غیرفعال‌سازی در نسخه جدید Spring Security
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req ->
                         req.requestMatchers(WHITE_LIST_URL)
                                 .permitAll()
@@ -57,11 +57,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    /**
-     * این Bean تنظیمات امنیتی را به رابط کاربری Swagger اضافه می‌کند.
-     * با این کار دکمه سبز رنگ 'Authorize' در صفحه Swagger ظاهر می‌شود.
-     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

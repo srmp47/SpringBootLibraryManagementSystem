@@ -7,25 +7,32 @@ import org.springframework.stereotype.Service;
 @Service
 public class MonitoringService {
 
-    private final Counter totalRequestsCounter;
-    private final Counter successRequestsCounter;
-    private final Counter failureRequestsCounter;
+    private final MeterRegistry meterRegistry;
 
-    public MonitoringService(MeterRegistry registry) {
-        this.totalRequestsCounter = Counter.builder("library_requests_total")
-                .description("Total number of requests to library API")
-                .register(registry);
-
-        this.successRequestsCounter = Counter.builder("library_requests_success")
-                .description("Total number of successful requests")
-                .register(registry);
-
-        this.failureRequestsCounter = Counter.builder("library_requests_failure")
-                .description("Total number of failed requests")
-                .register(registry);
+    public MonitoringService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
-    public void incrementTotal() { totalRequestsCounter.increment(); }
-    public void incrementSuccess() { successRequestsCounter.increment(); }
-    public void incrementFailure() { failureRequestsCounter.increment(); }
+    public void incrementTotal() {
+        Counter.builder("library_requests_total")
+                .description("Total requests")
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void incrementSuccess(String username) {
+        Counter.builder("library_requests_user_success")
+                .tag("username", username)
+                .description("Successful requests per user")
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void incrementFailure(String username) {
+        Counter.builder("library_requests_user_failure")
+                .tag("username", username)
+                .description("Failed requests per user")
+                .register(meterRegistry)
+                .increment();
+    }
 }

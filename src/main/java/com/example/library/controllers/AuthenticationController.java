@@ -40,7 +40,7 @@ public class AuthenticationController {
     public ResponseEntity<String> register(@Valid @RequestBody UserDTO dto) {
         monitoringService.incrementTotal();
         if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
-            monitoringService.incrementFailure();
+            monitoringService.incrementFailure("anonymous");
             throw new RuntimeException("Username is already taken!");
         }
 
@@ -50,7 +50,7 @@ public class AuthenticationController {
                 .role(dto.getRole())
                 .build();
         userRepository.save(user);
-        monitoringService.incrementSuccess();
+        monitoringService.incrementSuccess("anonymous");
         return ResponseEntity.ok("User registered successfully");
     }
 
@@ -66,7 +66,7 @@ public class AuthenticationController {
         );
         var user = userRepository.findByUsername(request.getUsername()).orElseThrow();
         String token = jwtService.generateToken(user);
-        monitoringService.incrementSuccess();
+        monitoringService.incrementSuccess("anonymous");
         return ResponseEntity.ok(token);
     }
 }

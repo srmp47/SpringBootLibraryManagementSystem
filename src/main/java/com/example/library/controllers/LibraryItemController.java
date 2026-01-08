@@ -33,57 +33,65 @@ public class LibraryItemController {
     @GetMapping
     public ResponseEntity<List<LibraryItem>> getAll() {
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(readLibraryItemService.getAllLibraryItems());
+        var results = readLibraryItemService.getAllLibraryItems();
+        monitoringService.incrementSuccess("anonymous");
+        return ResponseEntity.ok(results);
     }
 
     @Operation(summary = "Get a specific item by ID", description = "Fetch detailed information of a single library item using its unique ID")
     @GetMapping("/{id}")
     public ResponseEntity<LibraryItem> getById(@PathVariable int id) {
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(readLibraryItemService.getLibraryItemById(id));
+        var result = readLibraryItemService.getLibraryItemById(id);
+        monitoringService.incrementSuccess("anonymous");
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Search library items", description = "Search for items using specific algorithms (Linear/Binary) and keywords")
     @GetMapping("/search")
     public ResponseEntity<List<LibraryItem>> search(@RequestParam SearchAlgorithm algorithm, @RequestParam String keyword) {
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(readLibraryItemService.searchLibraryItems(algorithm, keyword));
+        var results = readLibraryItemService.searchLibraryItems(algorithm, keyword);
+        monitoringService.incrementSuccess("anonymous");
+        return ResponseEntity.ok(results);
     }
 
     @Operation(summary = "Delete an item", description = "Permanently removes a library item from the database by its ID")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<Void> delete(@PathVariable int id, @AuthenticationPrincipal User currentUser) {
         monitoringService.incrementTotal();
         deleteLibraryItemService.deleteLibraryItem(id);
-        monitoringService.incrementSuccess();
+        monitoringService.incrementSuccess(currentUser.getUsername());
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Borrow an item", description = "Assigns an item to the current authenticated user")
     @PatchMapping("/{itemId}/borrow")
-    public ResponseEntity<LibraryItem> borrowItem( @PathVariable int itemId, @AuthenticationPrincipal User currentUser){
+    public ResponseEntity<LibraryItem> borrowItem(@PathVariable int itemId, @AuthenticationPrincipal User currentUser){
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(updateLibraryItemService.borrowItem(itemId, currentUser.getId()));
+        var item = updateLibraryItemService.borrowItem(itemId, currentUser.getId());
+        monitoringService.incrementSuccess(currentUser.getUsername());
+        return ResponseEntity.ok(item);
     }
 
     @Operation(summary = "Return an item", description = "Unassigns the user from the item and sets its status back to AVAILABLE")
     @PatchMapping("/{itemId}/return")
     public ResponseEntity<LibraryItem> returnItem(@PathVariable int itemId, @AuthenticationPrincipal User currentUser) {
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(updateLibraryItemService.returnItem(itemId, currentUser.getId()));
+        var item = updateLibraryItemService.returnItem(itemId, currentUser.getId());
+        monitoringService.incrementSuccess(currentUser.getUsername());
+        return ResponseEntity.ok(item);
     }
 
     @Operation(summary = "Update item status", description = "Partially updates the status of a library item (e.g., to DAMAGED or LOST)")
     @PatchMapping("/{id}/status/{newStatus}")
-    public ResponseEntity<LibraryItem> updateStatus(@PathVariable int id, @PathVariable LibraryItemStatus newStatus) {
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<LibraryItem> updateStatus(@PathVariable int id, @PathVariable LibraryItemStatus newStatus,
+                                                    @AuthenticationPrincipal User currentUser) {
         monitoringService.incrementTotal();
-        monitoringService.incrementSuccess();
-        return ResponseEntity.ok(updateLibraryItemService.patchLibraryItemStatus(id, newStatus));
+        var result = updateLibraryItemService.patchLibraryItemStatus(id, newStatus);
+        monitoringService.incrementSuccess(currentUser.getUsername());
+        return ResponseEntity.ok(result);
     }
 }
