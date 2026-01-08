@@ -67,11 +67,14 @@ public class UpdateLibraryItemService {
     }
 
     @Transactional
-    public LibraryItem returnItem(int itemId) {
+    public LibraryItem returnItem(int itemId, int userId) {
         LibraryItem libraryItem = findItemOrThrow(itemId);
 
         if (libraryItem.getUser() == null) {
             throw new BusinessRuleException("This item is not borrowed.");
+        }
+        if( libraryItem.getUser().getId() != userId) {
+            throw new BusinessRuleException("This item was borrowed by another user.");
         }
 
         libraryItem.setUser(null);

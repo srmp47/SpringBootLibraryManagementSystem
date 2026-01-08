@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/items")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ADMIN')")
 @Tag(name = "Item Creation", description = "Endpoints for creating specific types of library items")
 public class ItemCreationController {
 

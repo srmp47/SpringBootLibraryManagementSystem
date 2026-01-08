@@ -1,6 +1,7 @@
 package com.example.library.controllers;
 
 import com.example.library.models.LibraryItem;
+import com.example.library.models.User;
 import com.example.library.models.enums.LibraryItemStatus;
 import com.example.library.models.enums.SearchAlgorithm;
 import com.example.library.services.ReadLibraryItemService;
@@ -10,6 +11,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,21 +47,22 @@ public class LibraryItemController {
 
     @Operation(summary = "Delete an item", description = "Permanently removes a library item from the database by its ID")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable int id) {
         deleteLibraryItemService.deleteLibraryItem(id);
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Borrow an item", description = "Assigns an item to a user and updates its status to BORROWED")
-    @PatchMapping("/{itemId}/borrow/{userId}")
-    public ResponseEntity<LibraryItem> borrowItem(@PathVariable int itemId, @PathVariable int userId) {
-        return ResponseEntity.ok(updateLibraryItemService.borrowItem(itemId, userId));
+    @Operation(summary = "Borrow an item", description = "Assigns an item to the current authenticated user")
+    @PatchMapping("/{itemId}/borrow")
+    public ResponseEntity<LibraryItem> borrowItem( @PathVariable int itemId, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(updateLibraryItemService.borrowItem(itemId, currentUser.getId()));
     }
 
     @Operation(summary = "Return an item", description = "Unassigns the user from the item and sets its status back to AVAILABLE")
     @PatchMapping("/{itemId}/return")
-    public ResponseEntity<LibraryItem> returnItem(@PathVariable int itemId) {
-        return ResponseEntity.ok(updateLibraryItemService.returnItem(itemId));
+    public ResponseEntity<LibraryItem> returnItem(@PathVariable int itemId, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(updateLibraryItemService.returnItem(itemId, currentUser.getId()));
     }
 
     @Operation(summary = "Update item status", description = "Partially updates the status of a library item (e.g., to DAMAGED or LOST)")

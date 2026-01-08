@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class LibraryItemViewController {
 
     @Operation(summary = "Get full library summary", description = "Returns a flat view of all items joined with current borrower information")
     @GetMapping("/all-info")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LibraryItemView>> getAllWithUserInfo() {
         return ResponseEntity.ok(libraryItemViewRepository.findAll());
     }
@@ -37,6 +39,7 @@ public class LibraryItemViewController {
 
     @Operation(summary = "Get items by specific username", description = "Retrieves all items currently borrowed by a specific user's username")
     @GetMapping("/by-user")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LibraryItemView>> getByUser(@RequestParam String username) {
         return ResponseEntity.ok(libraryItemViewRepository.findItemsBorrowedByUser(username));
     }
