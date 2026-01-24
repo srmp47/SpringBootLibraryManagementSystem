@@ -38,7 +38,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/webjars/**",
             "/swagger-ui.html",
-            "/actuator/prometheus"
+            "/actuator/prometheus",
+            "/actuator/metrics"
     };
 
     @Bean
@@ -48,6 +49,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req ->
                         req.requestMatchers(WHITE_LIST_URL)
                                 .permitAll()
+                                .requestMatchers("/actuator/**").permitAll()
+                                .requestMatchers("/api/auth/**").permitAll()
                                 .anyRequest()
                                 .authenticated()
                 )

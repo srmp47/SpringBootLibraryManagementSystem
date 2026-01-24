@@ -3,7 +3,6 @@ package com.example.library.controllers;
 import com.example.library.models.LibraryItemView;
 import com.example.library.models.User;
 import com.example.library.repositories.LibraryItemViewRepository;
-import com.example.library.services.MonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -20,43 +20,45 @@ import java.util.List;
 public class LibraryItemViewController {
 
     private final LibraryItemViewRepository libraryItemViewRepository;
-    private final MonitoringService monitoringService;
 
-    @Operation(summary = "Get full library summary", description = "Returns a flat view of all items joined with current borrower information")
+    @Operation(summary = "Get full library summary",
+            description = "Returns a flat view of all items joined with current borrower information")
     @GetMapping("/all-info")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<List<LibraryItemView>> getAllWithUserInfo(@AuthenticationPrincipal User currentUser) {
-        monitoringService.incrementTotal();
+    public ResponseEntity<List<LibraryItemView>> getAllWithUserInfo(
+            @AuthenticationPrincipal User currentUser) {
+
         var results = libraryItemViewRepository.findAll();
-        monitoringService.incrementSuccess(currentUser.getUsername());
         return ResponseEntity.ok(results);
     }
 
-    @Operation(summary = "List currently borrowed items", description = "Shows all items that are currently out with users")
+    @Operation(summary = "List currently borrowed items",
+            description = "Shows all items that are currently out with users")
     @GetMapping("/borrowed")
     public ResponseEntity<List<List<LibraryItemView>>> getBorrowed() {
-        monitoringService.incrementTotal();
+
         var results = libraryItemViewRepository.findBorrowedItems();
-        monitoringService.incrementSuccess("anonymous");
         return ResponseEntity.ok(List.of(results));
     }
 
-    @Operation(summary = "List available items", description = "Returns a list of all items currently on the shelves (Status = EXIST)")
+    @Operation(summary = "List available items",
+            description = "Returns a list of all items currently on the shelves (Status = EXIST)")
     @GetMapping("/available")
     public ResponseEntity<List<LibraryItemView>> getAvailable() {
-        monitoringService.incrementTotal();
+
         var results = libraryItemViewRepository.findAvailableItems();
-        monitoringService.incrementSuccess("anonymous");
         return ResponseEntity.ok(results);
     }
 
-    @Operation(summary = "Get items by specific username", description = "Retrieves all items currently borrowed by a specific user's username")
+    @Operation(summary = "Get items by specific username",
+            description = "Retrieves all items currently borrowed by a specific user's username")
     @GetMapping("/by-user")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<List<LibraryItemView>> getByUser(@RequestParam String username, @AuthenticationPrincipal User currentUser) {
-        monitoringService.incrementTotal();
+    public ResponseEntity<List<LibraryItemView>> getByUser(
+            @RequestParam String username,
+            @AuthenticationPrincipal User currentUser) {
+
         var results = libraryItemViewRepository.findItemsBorrowedByUser(username);
-        monitoringService.incrementSuccess(currentUser.getUsername());
         return ResponseEntity.ok(results);
     }
 }
